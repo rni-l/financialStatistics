@@ -1,0 +1,25 @@
+parameters:
+  curPage:
+    name: curPage
+    type: number
+    description: 页码
+    default: 1
+    required: false
+  pageSize:
+    name: pageSize
+    type: number
+    description: 每页数量
+    default: 10
+    required: false
+  order:
+    name: order
+    type: string
+    description: 排序字段
+    default: id
+    required: false
+  orderType:
+    name: orderType
+    type: string
+    description: 排序类型
+    default: ASC
+    required: false
