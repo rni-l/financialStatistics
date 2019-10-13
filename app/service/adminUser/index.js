@@ -3,7 +3,7 @@ const TABLE_NAME = 'admin_user'
 
 module.exports = class UserService extends Service {
   async login({ name, password }) {
-    const sql = `SELECT id, name, created_time as createdTime, 'stauts'
+    const sql = `SELECT id, name, created_time as createdTime, status
       FROM ${TABLE_NAME} WHERE name='${name}' and password='${password}';`
     return this.handleListDataToObject(await this.ctx.helper.dbQuery(sql))
   }

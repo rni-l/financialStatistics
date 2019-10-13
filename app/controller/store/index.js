@@ -60,11 +60,18 @@ class IndexController extends BaseController {
     const id = Number(ctx.params.id)
     if (!this.checkId(id)) return false
     const data = await this.service.store.index.destroy(id)
-    console.log(data)
     ctx.body = this.formatData({
       ...data,
       data: data.code === SUCCESS_CODE ? '删除成功' : data.data
     })
+  }
+
+  async show() {
+    const { ctx } = this
+    const id = Number(ctx.params.id)
+    if (!this.checkId(id)) return false
+    const data = await this.service.store.index.find(id)
+    ctx.body = this.formatData(data)
   }
 
   async index() {

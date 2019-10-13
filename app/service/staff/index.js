@@ -23,7 +23,7 @@ module.exports = class StoreService extends Service {
       tableName: `${TABLE_NAME} as s LEFT JOIN store as t`,
       whereStr: 'ON s.store_code = t.code',
       field: `s.id, s.name, s.store_code as storeCode, s.register_time as registerTime,
-        s.bonus_ratio as bonusRatio, s.is_ignore_platform as isIgnorePlatform
+        s.bonus_ratio as bonusRatio, s.is_ignore_platform as isIgnorePlatform,
         t.\`id\` as storeId, t.\`name\` as storeName`
     })
     let countSql = `SELECT COUNT(*) AS count FROM ${TABLE_NAME} `
@@ -77,14 +77,16 @@ module.exports = class StoreService extends Service {
                 address: cur.address,
                 remark: cur.remark,
                 storeId: cur.storeId,
+                bonusRatio: cur.bonusRatio,
+                isIgnorePlatform: cur.isIgnorePlatform,
                 jobs: []
               }
             }
             if (cur.jobId) {
               acc.jobs.push({
-                jobId: cur.jobId,
-                jobCode: cur.jobCode,
-                jobName: cur.jobName,
+                id: cur.jobId,
+                code: cur.jobCode,
+                name: cur.jobName,
                 commissionRatio: cur.commissionRatio
               })
             }

@@ -30,7 +30,7 @@ exports.salary = {
 
 exports.bonusRatio = {
   type: 'number',
-  required: true,
+  required: false,
   message: '请传入职位的 bonusRatio',
   min: 0,
   max: 1
