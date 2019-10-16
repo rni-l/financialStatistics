@@ -3,6 +3,7 @@
 const Excel = require('exceljs')
 const path = require('path')
 const fs = require('fs')
+const moment = require('moment')
 const BaseController = require('../index')
 const { startDate, endDate } = require('../../dto/statistics')
 const { SUCCESS_CODE, ID_EMPTY } = require('../../const/codeType')
@@ -16,14 +17,21 @@ const salaryDescribe = {
 class IndexController extends BaseController {
   async getSalary() {
     const { ctx, service } = this
-    const params = ctx.request.body
-    const { isSuccess, errorMsg } = await ctx.helper.validate(params, salaryDescribe)
+    const { startDate, endDate } = ctx.request.query
+    let _params = {}
+    if (startDate && endDate) {
+      _params = {
+        startDate: Number(startDate),
+        endDate: Number(endDate)
+      }
+    }
+    const { isSuccess, errorMsg } = await ctx.helper.validate(_params, salaryDescribe)
     if (!isSuccess) {
       return (ctx.body = this.formatError({ data: errorMsg }))
     }
     let results = []
     try {
-      results = await Promise.all([await service.statistics.index.getStaff(), await service.statistics.index.getBill(params.startDate, params.endDate)])
+      results = await Promise.all([await service.statistics.index.getStaff(), await service.statistics.index.getBill(_params.startDate, _params.endDate)])
     } catch (error) {
       console.log('promise all error:', error)
       ctx.body = this.formatError(error)
@@ -36,11 +44,11 @@ class IndexController extends BaseController {
       staffs: results[0].data,
       bills: results[1].data
     })
-    const filename = await this.createExcel(data)
-    // ctx.body = this.formatData({
-    //   code: 200,
-    //   data
-    // })
+    let name = '工资表'
+    if (startDate && endDate) {
+      name = `${moment(_params.startDate).format('YYYY-MM-DD')}至${moment(_params.endDate).format('YYYY-MM-DD')}的工资表`
+    }
+    const filename = await this.createExcel(data, name)
     this.ctx.attachment(filename)
     this.ctx.set('Content-Type', 'application/octet-stream')
     this.ctx.body = fs.createReadStream(path.resolve(this.app.config.static.dir, filename))
@@ -95,7 +103,7 @@ class IndexController extends BaseController {
     }
   }
 
-  async createExcel({ staff, bills }) {
+  async createExcel({ staff, bills }, name) {
     const workbook = new Excel.Workbook()
     workbook.creator = 'lujieqi'
     workbook.views = {
@@ -107,7 +115,7 @@ class IndexController extends BaseController {
       activeTab: 1,
       visibility: 'visible'
     }
-    const worksheet = workbook.addWorksheet('9月份工资表', { views: [{ xSplit: 1, ySplit: 1 }] })
+    const worksheet = workbook.addWorksheet(name, { views: [{ xSplit: 1, ySplit: 1 }] })
     worksheet.horizontalCentered = true
     worksheet.verticalCentered = true
     const aColumn = worksheet.getColumn('A')
@@ -139,7 +147,7 @@ class IndexController extends BaseController {
     mColumn.width = 20
     nColumn.width = 20
     var rows = [
-      ['2019年9月实发工资表'],
+      [name],
       ['姓名', '当月实收', '', '', '', '', '', '', '', '实际应付提成'],
       ['', '地址', '已收佣金', '扣除平台费及经费后佣金', '分成比例', '佣金金额', '提成比例', '小计', '经理额外提成', '实际应付提成', '合计', '签名确认', '备注']
     ]
@@ -152,7 +160,7 @@ class IndexController extends BaseController {
     worksheet.eachRow(row => {
       row.alignment = { vertical: true, horizontal: 'center' }
     })
-    const filename = `9月份工资表${Date.now()}.xlsx`
+    const filename = `${name}${Date.now()}.xlsx`
     const fpath = path.join(__dirname, '../../public/' + filename)
     await workbook.xlsx.writeFile(fpath)
     return filename
