@@ -152,6 +152,14 @@ class IndexController extends BaseController {
     const resultInfo = await this.service.bill.index.find(id)
     ctx.body = this.formatData(resultInfo)
   }
+
+  async updateStatus() {
+    const { ctx } = this
+    const id = Number(ctx.params.id)
+    if (!this.checkId(id)) return false
+    const resultInfo = await this.service.bill.index.updateStatus(id)
+    ctx.body = this.formatData(resultInfo)
+  }
 }
 
 module.exports = IndexController

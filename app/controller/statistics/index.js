@@ -2,6 +2,7 @@
 
 const Excel = require('exceljs')
 const path = require('path')
+const fs = require('fs')
 const BaseController = require('../index')
 const { startDate, endDate } = require('../../dto/statistics')
 const { SUCCESS_CODE, ID_EMPTY } = require('../../const/codeType')
@@ -35,11 +36,14 @@ class IndexController extends BaseController {
       staffs: results[0].data,
       bills: results[1].data
     })
-    // await this.createExcel(data)
-    ctx.body = this.formatData({
-      code: 200,
-      data
-    })
+    const filename = await this.createExcel(data)
+    // ctx.body = this.formatData({
+    //   code: 200,
+    //   data
+    // })
+    this.ctx.attachment(filename)
+    this.ctx.set('Content-Type', 'application/octet-stream')
+    this.ctx.body = fs.createReadStream(path.resolve(this.app.config.static.dir, filename))
   }
 
   async computeData({ staffs, bills }) {
@@ -151,6 +155,7 @@ class IndexController extends BaseController {
     const filename = `9月份工资表${Date.now()}.xlsx`
     const fpath = path.join(__dirname, '../../public/' + filename)
     await workbook.xlsx.writeFile(fpath)
+    return filename
   }
 
   async writeSheet(worksheet, staffs, bills) {
