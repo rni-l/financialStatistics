@@ -71,7 +71,7 @@ module.exports = class BaseService extends Service {
   createWhereStr(obj) {
     const arr = Object.keys(obj).reduce((acc, cur) => {
       if (isDef(obj[cur])) return acc
-      acc.push(`${cur}=${obj[cur]}`)
+      acc.push(`${cur}=${typeof obj[cur] === 'string' ? ('"' + obj[cur] + '"') : obj[cur]}`)
       return acc
     }, [])
     if (arr.length) {

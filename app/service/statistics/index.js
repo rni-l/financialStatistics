@@ -59,7 +59,8 @@ module.exports = class StoreService extends Service {
     let sql = `SELECT
       b.id, b.name, b.price, b.open_date as open_date, b.receive_date as receiveDate, b.status,
       s.id as staffId,
-      bs.ratio
+      bs.ratio,
+      bs.staff_ratio as staffRatio
       FROM bill as b
       LEFT JOIN staff as s ON s.id in (SELECT staff_id FROM bill__staff as bs WHERE bs.bill_id = b.id)
       LEFT JOIN bill__staff as bs ON bs.bill_id = b.id AND s.id = bs.staff_id
@@ -90,7 +91,8 @@ module.exports = class StoreService extends Service {
           if (cur.staffId) {
             const obj = {
               staffId: cur.staffId,
-              staffRatio: cur.ratio
+              staffRatio: cur.ratio,
+              staffBillRatio: cur.staffRatio
             }
             if (!findObj) {
               console.log(acc)

@@ -1,7 +1,7 @@
 'use strict'
 
 const BaseController = require('../index')
-const { id, name, price, openDate, receiveDate, staffInfo } = require('../../dto/bill')
+const { id, name, price, openDate, receiveDate, staffInfo, status } = require('../../dto/bill')
 const { SUCCESS_CODE, ID_EMPTY } = require('../../const/codeType')
 
 const createDescribe = {
@@ -14,6 +14,24 @@ const createDescribe = {
 const updateDescribe = {
   id,
   ...createDescribe
+}
+const queryDescribe = {
+  name: {
+    ...name,
+    required: false
+  },
+  openDate: {
+    ...openDate,
+    required: false
+  },
+  receiveDate: {
+    ...receiveDate,
+    required: false
+  },
+  status: {
+    ...status,
+    required: false
+  }
 }
 
 class IndexController extends BaseController {
@@ -137,6 +155,18 @@ class IndexController extends BaseController {
   async index() {
     const { ctx } = this
     const query = ctx.request.query
+    const { isSuccess, errorMsg } = await ctx.helper.validate(
+      {
+        openDate: Number(query.openDate) || '',
+        receiveDate: Number(query.receiveDate) || '',
+        status: Number(query.status) || '',
+        name: query.name || ''
+      },
+      queryDescribe
+    )
+    if (!isSuccess) {
+      return (ctx.body = this.formatError({ data: errorMsg }))
+    }
     const data = await this.service.bill.index.index({
       ...query,
       curPage: query.curPage ? Number(query.curPage) : 1,
@@ -158,6 +188,19 @@ class IndexController extends BaseController {
     const id = Number(ctx.params.id)
     if (!this.checkId(id)) return false
     const resultInfo = await this.service.bill.index.updateStatus(id)
+    ctx.body = this.formatData(resultInfo)
+  }
+
+  async updateReceiveDate() {
+    const { ctx } = this
+    const id = Number(ctx.params.id)
+    const { receiveDate } = ctx.request.body
+    if (!this.checkId(id)) return false
+    const { isSuccess, errorMsg } = await ctx.helper.validate({ receiveDate }, { receiveDate: createDescribe.receiveDate })
+    if (!isSuccess) {
+      return (ctx.body = this.formatError({ data: errorMsg }))
+    }
+    const resultInfo = await this.service.bill.index.updateReciveDate(id, receiveDate)
     ctx.body = this.formatData(resultInfo)
   }
 }

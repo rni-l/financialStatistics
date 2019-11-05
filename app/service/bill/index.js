@@ -15,16 +15,34 @@ module.exports = class BillService extends Service {
     return this.formatData(result, true)
   }
 
-  async index({ curPage = 1, pageSize = 10, order, orderType }) {
+  async index({ curPage = 1, pageSize = 10, order, orderType, openDate, receiveDate, status, name }) {
+    let whereStr = this.createWhereStr({ status })
+    let dateStr = ''
+    if (openDate) {
+      dateStr = `open_date <= ${openDate}`
+    } else if (receiveDate) {
+      dateStr = `receive_date <= ${receiveDate}`
+    }
+    if (name) {
+      dateStr = dateStr ? `${dateStr}&name LIKE '%${name}%'` : `name LIKE '%${name}%'`
+    }
+    if (dateStr) {
+      if (whereStr) {
+        whereStr += '&' + dateStr
+      } else {
+        whereStr = 'WHERE ' + dateStr
+      }
+    }
     let sql = this.getPageData({
       curPage,
       pageSize,
       order,
       orderType,
       tableName: TABLE_NAME,
-      field: 'id, name, price, open_date as openDate, receive_date as receiveDate, status'
+      field: 'id, name, price, open_date as openDate, receive_date as receiveDate, status',
+      whereStr
     })
-    let countSql = `SELECT COUNT(*) AS count FROM ${TABLE_NAME} `
+    let countSql = `SELECT COUNT(*) AS count FROM ${TABLE_NAME} ${whereStr}`
     const countData = await this.ctx.helper.dbQuery(countSql)
     const count = this.handleCountData(countData)
     return this.handlePageData(await this.ctx.helper.dbQuery(sql), { count, curPage, pageSize })
@@ -45,9 +63,9 @@ module.exports = class BillService extends Service {
     const sql = `SELECT
       b.id, b.name, b.price, b.open_date as openDate,
       b.receive_date as receiveDate, b.status, s.name as staffName,
-      s.id as staffId, bs.ratio
+      s.id as staffId, bs.ratio, bs.staff_ratio as staffRatio
     FROM bill as b left join
-    bill__staff as bs ON bs.bill_id = 20 left join
+    bill__staff as bs ON bs.bill_id = ${id} left join
     staff as s ON s.id = bs.staff_id
     WHERE b.id = ${id}`
     const data = await this.ctx.helper.dbQuery(sql)
@@ -72,6 +90,7 @@ module.exports = class BillService extends Service {
             const obj = {
               id: cur.staffId,
               ratio: cur.ratio,
+              staffRatio: cur.staffRatio,
               name: cur.staffName
             }
             if (!findObj) {
@@ -89,6 +108,12 @@ module.exports = class BillService extends Service {
 
   async updateStatus(id) {
     const sql = `UPDATE ${TABLE_NAME} SET receive_date=${Date.now()}, status=1
+      WHERE id = ${id};`
+    return this.formatData(await this.ctx.helper.dbQuery(sql), true)
+  }
+
+  async updateReciveDate(id, date) {
+    const sql = `UPDATE ${TABLE_NAME} SET receive_date=${date}
       WHERE id = ${id};`
     return this.formatData(await this.ctx.helper.dbQuery(sql), true)
   }

@@ -21,8 +21,8 @@ class IndexController extends BaseController {
     let _params = {}
     if (startDate && endDate) {
       _params = {
-        startDate: Number(startDate),
-        endDate: Number(endDate)
+        startDate: startDate === 'undefined' ? undefined : Number(startDate),
+        endDate: endDate === 'undefined' ? undefined : Number(endDate)
       }
     }
     const { isSuccess, errorMsg } = await ctx.helper.validate(_params, salaryDescribe)
@@ -45,8 +45,10 @@ class IndexController extends BaseController {
       bills: results[1].data
     })
     let name = '工资表'
-    if (startDate && endDate) {
+    if (_params.startDate && _params.endDate) {
       name = `${moment(_params.startDate).format('YYYY-MM-DD')}至${moment(_params.endDate).format('YYYY-MM-DD')}的工资表`
+    } else {
+      name = '总工资表'
     }
     const filename = await this.createExcel(data, name)
     this.ctx.attachment(filename)
@@ -62,7 +64,7 @@ class IndexController extends BaseController {
     }))
     bills.forEach(bill => {
       if (bill.status !== 1) return false
-      bill.staffs.forEach(({ staffId, staffRatio }) => {
+      bill.staffs.forEach(({ staffId, staffRatio, staffBillRatio }) => {
         const staff = data.find(v => v.id === staffId)
         if (!staff) return false
         const remainingPrice = formatNumber(
@@ -70,12 +72,13 @@ class IndexController extends BaseController {
             // 如果 isIgnorePlatform === 1 ，不需要扣除平台费
             (staff.isIgnorePlatform === 1 ? 1 : 1 - platformRatio)
         )
+        const _ratio = staffBillRatio || staffRatio
         // 佣金金额
         const bonusPrice = formatNumber(
           bill.price *
             // 如果 isIgnorePlatform === 1 ，不需要扣除平台费
             (staff.isIgnorePlatform === 1 ? 1 : 1 - platformRatio) *
-            staffRatio
+            _ratio
         )
         // console.log(
         //   'bill:',
@@ -90,10 +93,10 @@ class IndexController extends BaseController {
         staff.bills.push({
           address: bill.name,
           billPrice: bill.price,
-          ratio: staffRatio,
+          ratio: _ratio,
           remainingPrice,
           bonusPrice,
-          staffReceivePrice: formatNumber(bill.price * (staff.isIgnorePlatform === 1 ? 1 : 1 - platformRatio) * staffRatio * (staff.bonusRatio || newBonusRatio))
+          staffReceivePrice: formatNumber(bill.price * (staff.isIgnorePlatform === 1 ? 1 : 1 - platformRatio) * _ratio * (staff.bonusRatio || newBonusRatio))
         })
       })
     })
@@ -170,6 +173,7 @@ class IndexController extends BaseController {
     const { newBonusRatio } = this.app.config.base
     const rows = []
     staffs.forEach(staff => {
+      if (!staff.bills.length) return false
       staff.bills.forEach((bill, billIndex) => {
         const row = [
           billIndex === 0 ? staff.name : '',

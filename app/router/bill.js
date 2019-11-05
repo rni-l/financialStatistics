@@ -4,4 +4,5 @@ module.exports = ({ router, controller }) => {
   const sub = router.namespace(BILL)
   sub.resources('bill', '', controller.bill.index)
   sub.get('bill', '/updateStatus/:id', controller.bill.index.updateStatus)
+  sub.put('bill', '/updateReceiveDate/:id', controller.bill.index.updateReceiveDate)
 }
