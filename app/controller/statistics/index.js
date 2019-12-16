@@ -72,7 +72,7 @@ class IndexController extends BaseController {
             // 如果 isIgnorePlatform === 1 ，不需要扣除平台费
             (staff.isIgnorePlatform === 1 ? 1 : 1 - platformRatio)
         )
-        const _ratio = staffBillRatio || staffRatio
+        const _ratio = staffRatio
         // 佣金金额
         const bonusPrice = formatNumber(
           bill.price *
@@ -96,7 +96,11 @@ class IndexController extends BaseController {
           ratio: _ratio,
           remainingPrice,
           bonusPrice,
-          staffReceivePrice: formatNumber(bill.price * (staff.isIgnorePlatform === 1 ? 1 : 1 - platformRatio) * _ratio * (staff.bonusRatio || newBonusRatio))
+          staffReceivePrice: formatNumber(bill.price * (staff.isIgnorePlatform === 1 ? 1 : 1 - platformRatio) * _ratio *
+            // 先判断是否有该员工在该订单的比率
+            // 再判断该员工设置的比率
+            // 再获取默认比率
+            (staffBillRatio || staff.bonusRatio || newBonusRatio))
         })
       })
     })
